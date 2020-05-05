@@ -56,7 +56,7 @@ app.use('/movies', moviesRoutes);
 app.use('/artists', artistRoutes)
 
 app.get('/redirect', (req, res) => {
-    res.redirect('http://localhost:3000/profile');
+    res.redirect('https://filmfanatics-client.herokuapp.com');
 })
 
 app.listen(PORT, () => {
