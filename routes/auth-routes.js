@@ -15,7 +15,7 @@ router.get('/logout', (req, res) => {
 
 //callback route for google to redirect to
 router.get('/google/redirect', passport.authenticate('google'), (req, res) => {
-    res.redirect('http://localhost:3000/');
+    res.redirect('https://filmfanatics-client.herokuapp.com/');
 });
 
 module.exports = router;
