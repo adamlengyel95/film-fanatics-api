@@ -17,7 +17,7 @@ passport.deserializeUser((userId, done) => {
 passport.use(
     new GoogleStrategy({
         //Options for the google strategy
-        callbackURL: 'https://filmfanatics-api.herokuapp.com/auth/google/redirect',
+        callbackURL: '/auth/google/redirect',
         clientID: keys.google.clientID,
         clientSecret: keys.google.clientSecret
     }, (accesToken, refreshToken, profile, done) => {
