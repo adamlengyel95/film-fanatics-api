@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const db = require('../db/db');
 const movieService = require('../services/movie-service');
+const artistService = require('../services/artist-service')
 
 router.get('/', (req, res) => {
     movieService.getMovies()
@@ -12,16 +13,94 @@ router.get('/', (req, res) => {
 })
 
 router.get('/home', (req, res) => {
-    db.query('SELECT * FROM movies WHERE movies.release_date > "2010.01.01"', (err, rows, fields) => {
+    if (!req.user) {
+        console.log('came here')
+        movieService.getLatestMovies()
+            .then((result) => {
+                console.log('results are', result)
+                res.send(result)
+            }).catch((err) => {
+                res.status(500).send({ message: 'Error occured during fetching the latest movies', error: err })
+            })
+    } else {
+        const movies = []
+        const followedArtistIds = []
+        const errors = []
+        const getArtistIds = movieService.getArtistIdsByMovies()
+            .then((result) => {
+                result.forEach((movie) => {
+                    movies.push({
+                        id: movie.movieId,
+                        title: movie.title,
+                        releaseDate: movie.releaseDate,
+                        description: movie.description,
+                        imageName: movie.imageName,
+                        artistIds: movie.artistIds.split(',').map((id) => {
+                            return Number(id);
+                        }),
+                        relevance: 0
+                    })
+                })
+            }).catch((err) => {
+                errors.push({ name: err.name, message: err.messages })
+            })
+        const getFollowedArtists = artistService.getUserFollows(req.user.user_id)
+            .then((result) => {
+                result.forEach((artist) => {
+                    followedArtistIds.push(artist.id);
+                })
+            }).catch((err) => {
+                errors.push({ name: err.name, message: err.messages })
+            })
+        Promise.all([getArtistIds, getFollowedArtists])
+            .then(() => {
+                if (errors.length > 0) {
+                    res.status(500).send({ message: 'Error occured during fetching home recommendations', errors: errors })
+                } else if (followedArtistIds.length === 0) {
+                    movieService.getLatestMovies()
+                        .then((result) => {
+                            res.send(result)
+                        }).catch((err) => {
+                            res.status(500).send({ message: 'Error occured during fetching the latest movies', error: err })
+                        })
+                } else {
+                    movies.forEach((movie) => {
+                        movie.artistIds.forEach((id) => {
+                            if (followedArtistIds.some(artistId => artistId === id)) {
+                                movie.relevance++;
+                            }
+                        })
+                    })
+                    movies.sort((a, b) => (a.relevance < b.relevance) ? 1 : -1)
+                    const response = movies.slice(0, 10).map(movie => {
+                        return {
+                            id: movie.id,
+                            title: movie.title,
+                            releaseDate: movie.releaseDate,
+                            description: movie.description,
+                            imageName: movie.imageName
+                        }
+                    })
+                    res.send(response);
+                }
+            })
+    }
+});
+
+router.get('/search-home', (req, res) => {
+    db.query(`SELECT * FROM movies WHERE movies.title LIKE "%${req.query.title}%"`, (err, rows, fields) => {
         res.json(rows);
     })
 });
 
 router.get('/search', (req, res) => {
-    db.query(`SELECT * FROM movies WHERE movies.title LIKE "%${req.query.title}%"`, (err, rows, fields) => {
-        res.json(rows);
-    })
-});
+    movieService.getMoviesByTitle(req.query.title)
+        .then((result) => {
+            res.send(result);
+        }).catch((err) => {
+            res.status(500).send({ message: 'Error occuerd during fetching movies by title', error: err })
+        })
+})
 
 router.post('/rate', (req, res) => {
     if (!req.user) {
@@ -78,11 +157,20 @@ router.get('/genres', (req, res) => {
 
 router.get('/genre', (req, res) => {
     movieService.getMoviesByGenre(req.query.id)
-    .then((result) => {
-        res.send(result);
-    }).catch((err) => {
-        res.status(500).send({ message: 'Error occured during fetching movies by genre: ', error: err });
-    })
+        .then((result) => {
+            res.send(result);
+        }).catch((err) => {
+            res.status(500).send({ message: 'Error occured during fetching movies by genre: ', error: err });
+        })
+})
+
+router.get('/release', (req, res) => {
+    movieService.getMoviesByDateInterval(req.query.fromDate, req.query.toDate)
+        .then((result) => {
+            res.send(result);
+        }).catch((err) => {
+            res.status(500).send({ message: 'Error occured during fetching movies by date interval', error: err })
+        })
 })
 
 router.get('/:movieId', (req, res) => {
@@ -124,6 +212,7 @@ router.get('/:movieId', (req, res) => {
         .then((result) => {
             if (result.length > 0) {
                 response.rating = Math.round(result[0].rating * 2) / 2;
+                response.ratingCount = result[0].ratingCount;
             } else {
                 response.rating = 0;
             }

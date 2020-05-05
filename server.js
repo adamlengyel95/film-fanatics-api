@@ -11,7 +11,7 @@ const bodyParser = require('body-parser')
 const cookieSession = require('cookie-session');
 const app = express();
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;;
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -58,15 +58,6 @@ app.use('/artists', artistRoutes)
 app.get('/redirect', (req, res) => {
     res.redirect('http://localhost:3000/profile');
 })
-
-// Test for user select
-app.get('/users', (req, res) => {
-    db.query('SELECT * FROM users WHERE google_id = ?', ["202894900202616524258"], function (error, results, fields) {
-        if (error) throw error;
-    });
-
-    res.send("asd");
-});
 
 app.listen(PORT, () => {
     console.log('Server is running on port:', PORT);
