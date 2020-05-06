@@ -19,7 +19,8 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 app.use(cookieSession({
     maxAge: 24 * 60 * 60 * 1000,
-    keys: [keys.session.cookieKey]
+    keys: [keys.session.cookieKey],
+    domain: '.rabit.hu'
 }));
 
 // Add headers
