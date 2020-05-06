@@ -15,6 +15,7 @@ router.get('/logout', (req, res) => {
 
 //callback route for google to redirect to
 router.get('/google/redirect', passport.authenticate('google'), (req, res) => {
+    res.cookie('testcookie', 'value');
     res.redirect('http://filmfanatics-client.rabit.hu/');
 });
 
