@@ -15,7 +15,7 @@ module.exports = {
     },
     getLatestMovies: () => {
         return new Promise((resolve, reject) => {
-            db.query(`SELECT movies.movie_id as movieId, movies.release_date as releaseDate, movies.title, movies.description, movies.movie_cover AS imageName
+            db.query(`SELECT movies.movie_id as id, movies.release_date as releaseDate, movies.title, movies.description, movies.movie_cover AS imageName
             FROM movies
             ORDER BY movies.release_date DESC
             LIMIT 10`, (err, rows, fields) => {

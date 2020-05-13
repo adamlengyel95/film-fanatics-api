@@ -14,10 +14,8 @@ router.get('/', (req, res) => {
 
 router.get('/home', (req, res) => {
     if (!req.user) {
-        console.log('came here')
         movieService.getLatestMovies()
             .then((result) => {
-                console.log('results are', result)
                 res.send(result)
             }).catch((err) => {
                 res.status(500).send({ message: 'Error occured during fetching the latest movies', error: err })
@@ -88,7 +86,8 @@ router.get('/home', (req, res) => {
 });
 
 router.get('/search-home', (req, res) => {
-    db.query(`SELECT * FROM movies WHERE movies.title LIKE "%${req.query.title}%"`, (err, rows, fields) => {
+    db.query(`SELECT movies.movie_id as id, movies.release_date as releaseDate, movies.title, movies.description, movies.movie_cover AS imageName
+     FROM movies WHERE movies.title LIKE "%${req.query.title}%"`, (err, rows, fields) => {
         res.json(rows);
     })
 });
